@@ -9,4 +9,5 @@ export * from "./physicians-schema"
 export * from "./organizations-schema"
 export * from "./users-schema"
 export * from "./organization-memberships-schema"
+export * from "./finder-instances-schema"
 // Removed export * from "./todos-schema";

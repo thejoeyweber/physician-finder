@@ -31,3 +31,48 @@ export interface SpecialtyInfo {
   primarySpecialty: boolean
   boardCertified?: boolean
 }
+
+// Finder instance configuration structure
+export interface FinderConfiguration {
+  // UI/UX settings
+  theme: {
+    primaryColor?: string
+    secondaryColor?: string
+    fontFamily?: string
+    logoUrl?: string
+  }
+  // Search settings
+  search: {
+    defaultRadius?: number // in miles
+    maxRadius?: number
+    defaultLocation?: {
+      lat: number
+      lng: number
+      address?: string
+    }
+    filters: {
+      specialties?: string[] // Taxonomy codes to filter by
+      languages?: string[] // ISO language codes
+      acceptingNewPatients?: boolean
+      telehealth?: boolean
+      gender?: "M" | "F" | "X"
+      boardCertified?: boolean
+    }
+  }
+  // Display settings
+  display: {
+    showMap?: boolean
+    showFilters?: boolean
+    resultsPerPage?: number
+    sortOptions?: ("distance" | "name" | "specialty")[]
+    fields?: {
+      showNPI?: boolean
+      showSpecialties?: boolean
+      showLanguages?: boolean
+      showAcceptingPatients?: boolean
+      showTelehealth?: boolean
+      showAddress?: boolean
+      showPhone?: boolean
+    }
+  }
+}
