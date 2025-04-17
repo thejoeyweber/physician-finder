@@ -9,7 +9,8 @@ import {
   organizationMembershipsTable,
   organizationsTable,
   usersTable,
-  physiciansTable
+  physiciansTable,
+  finderInstancesTable
 } from "@/db/schema"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/postgres-js"
@@ -26,7 +27,8 @@ const schema = {
   users: usersTable,
   organizations: organizationsTable,
   organizationMemberships: organizationMembershipsTable,
-  physicians: physiciansTable
+  physicians: physiciansTable,
+  finderInstances: finderInstancesTable
 }
 
 /**

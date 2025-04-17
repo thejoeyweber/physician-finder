@@ -16,6 +16,7 @@
     "analyze": "ANALYZE=true npm run build",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
     "prepare": "husky install"
   },
   "lint-staged": {
@@ -86,6 +87,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^20",
     "@types/react": "^16.8 || ^17.0 || ^18.0 || ^19.0",
@@ -100,6 +102,7 @@
     "postcss": "^8",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }
