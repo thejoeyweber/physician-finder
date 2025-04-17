@@ -4,5 +4,6 @@ Exports the database schema modules for the app. This acts as a central point fo
 </ai_context>
 */
 
+export * from "./physicians-schema"
 export * from "./profiles-schema"
 // Removed export * from "./todos-schema";
