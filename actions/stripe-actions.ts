@@ -1,18 +1,28 @@
-/*
-<ai_context>
-Contains server actions related to Stripe.
-</ai_context>
-*/
-
-import {
-  updateProfileAction,
-  updateProfileByStripeCustomerIdAction
-} from "@/actions/db/profiles-actions"
-import { SelectProfile } from "@/db/schema"
+/**
+ * @description
+ * Contains server actions related to Stripe.
+ * NOTE: These actions are currently non-functional as Stripe fields have been removed
+ * from the user schema for the MVP. They are kept as placeholders for potential future integration.
+ *
+ * @dependencies
+ * - @/actions/db/users-actions: Provides actions to update user data (currently incompatible).
+ * - @/db/schema: Provides user schema types (currently incompatible).
+ * - @/lib/stripe: Provides the initialized Stripe client.
+ * - stripe: Stripe Node.js library.
+ *
+ * @notes
+ * - This file requires significant updates if Stripe integration is reintroduced.
+ * - Functions like `updateStripeCustomer` and `manageSubscriptionStatusChange` rely on
+ *   fields (`stripeCustomerId`, `stripeSubscriptionId`, `membership`) that no longer exist
+ *   in the `usersTable`.
+ */
+import { updateUserAction } from "@/actions/db/users-actions"
+import { SelectUser } from "@/db/schema"
 import { stripe } from "@/lib/stripe"
 import Stripe from "stripe"
 
-type MembershipStatus = SelectProfile["membership"]
+// Define a placeholder type as the original SelectProfile['membership'] is gone
+type MembershipStatus = "free" | "pro" | string // Placeholder
 
 const getMembershipStatus = (
   status: Stripe.Subscription.Status,
@@ -40,80 +50,26 @@ const getSubscription = async (subscriptionId: string) => {
   })
 }
 
+// FIXME: This function needs rework as usersTable no longer has stripe fields.
 export const updateStripeCustomer = async (
   userId: string,
   subscriptionId: string,
   customerId: string
 ) => {
-  try {
-    if (!userId || !subscriptionId || !customerId) {
-      throw new Error("Missing required parameters for updateStripeCustomer")
-    }
-
-    const subscription = await getSubscription(subscriptionId)
-
-    const result = await updateProfileAction(userId, {
-      stripeCustomerId: customerId,
-      stripeSubscriptionId: subscription.id
-    })
-
-    if (!result.isSuccess) {
-      throw new Error("Failed to update customer profile")
-    }
-
-    return result.data
-  } catch (error) {
-    console.error("Error in updateStripeCustomer:", error)
-    throw error instanceof Error
-      ? error
-      : new Error("Failed to update Stripe customer")
-  }
+  console.warn(
+    "updateStripeCustomer action called, but usersTable schema lacks Stripe fields. Skipping update."
+  )
+  return null // Return null or handle appropriately
 }
 
+// FIXME: This function needs rework as usersTable no longer has stripe fields.
 export const manageSubscriptionStatusChange = async (
   subscriptionId: string,
   customerId: string,
   productId: string
 ): Promise<MembershipStatus> => {
-  try {
-    if (!subscriptionId || !customerId || !productId) {
-      throw new Error(
-        "Missing required parameters for manageSubscriptionStatusChange"
-      )
-    }
-
-    const subscription = await getSubscription(subscriptionId)
-    const product = await stripe.products.retrieve(productId)
-    const membership = product.metadata.membership as MembershipStatus
-
-    if (!["free", "pro"].includes(membership)) {
-      throw new Error(
-        `Invalid membership type in product metadata: ${membership}`
-      )
-    }
-
-    const membershipStatus = getMembershipStatus(
-      subscription.status,
-      membership
-    )
-
-    const updateResult = await updateProfileByStripeCustomerIdAction(
-      customerId,
-      {
-        stripeSubscriptionId: subscription.id,
-        membership: membershipStatus
-      }
-    )
-
-    if (!updateResult.isSuccess) {
-      throw new Error("Failed to update subscription status")
-    }
-
-    return membershipStatus
-  } catch (error) {
-    console.error("Error in manageSubscriptionStatusChange:", error)
-    throw error instanceof Error
-      ? error
-      : new Error("Failed to update subscription status")
-  }
+  console.warn(
+    "manageSubscriptionStatusChange action called, but usersTable schema lacks Stripe fields. Skipping update."
+  )
+  return "free" // Placeholder return
 }

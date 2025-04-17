@@ -4,11 +4,8 @@ The root server layout for the app. It sets up Clerk authentication, providers (
 </ai_context>
 */
 
-import {
-  createProfileAction,
-  getProfileByUserIdAction
-} from "@/actions/db/profiles-actions"
-import { Toaster } from "@/components/ui/sonner" // Updated import for sonner
+import { getOrCreateUserAction } from "@/actions/db/users-actions"
+import { Toaster } from "@/components/ui/sonner"
 import { PostHogPageview } from "@/components/utilities/posthog/posthog-pageview"
 import { PostHogUserIdentify } from "@/components/utilities/posthog/posthog-user-identity"
 import { Providers } from "@/components/utilities/providers"
@@ -27,15 +24,15 @@ const inter = Inter({ subsets: ["latin"] })
  * Used for SEO and browser tab information.
  */
 export const metadata: Metadata = {
-  title: "Physician Finder", // Updated title
-  description: "Find physicians across the U.S. with ease." // Updated description
+  title: "Physician Finder",
+  description: "Find physicians across the U.S. with ease."
 }
 
 /**
  * @description The root layout component for the entire application.
  * It wraps all pages and provides global context and structure.
  * - Sets up Clerk authentication provider.
- * - Checks for and creates user profiles in the database upon login.
+ * - Checks for and creates user records in the database upon login using `getOrCreateUserAction`.
  * - Includes providers for theme, tooltips, and PostHog analytics.
  * - Renders global UI elements like the Tailwind indicator (in dev) and Toaster.
  * - Applies global styles and fonts.
@@ -51,12 +48,17 @@ export default async function RootLayout({
 }) {
   const { userId } = await auth()
 
-  // Ensure a profile exists for the logged-in user
+  // Ensure a user record exists for the logged-in user
   if (userId) {
-    const profileRes = await getProfileByUserIdAction(userId)
-    if (!profileRes.isSuccess) {
-      // Create a profile if one doesn't exist
-      await createProfileAction({ userId })
+    // Use getOrCreateUserAction to find or create the user record
+    const userResult = await getOrCreateUserAction(userId)
+    if (!userResult.isSuccess) {
+      // Log an error if the user record couldn't be fetched or created
+      console.error(
+        `Failed to get or create user record for ${userId}: ${userResult.message}`
+      )
+      // Depending on the desired behavior, you might want to handle this error more gracefully,
+      // e.g., redirecting to an error page or showing a notification.
     }
   }
 

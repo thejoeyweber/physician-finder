@@ -5,7 +5,12 @@ It defines the schema object that Drizzle uses for queries.
 </ai_context>
 */
 
-import { profilesTable } from "@/db/schema" // Removed todosTable import
+import {
+  organizationMembershipsTable,
+  organizationsTable,
+  usersTable,
+  physiciansTable
+} from "@/db/schema"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
@@ -18,8 +23,10 @@ config({ path: ".env.local" })
  * Maps table names to their corresponding schema definitions.
  */
 const schema = {
-  profiles: profilesTable
-  // Removed todos: todosTable
+  users: usersTable,
+  organizations: organizationsTable,
+  organizationMemberships: organizationMembershipsTable,
+  physicians: physiciansTable
 }
 
 /**
