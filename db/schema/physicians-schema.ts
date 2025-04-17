@@ -26,25 +26,23 @@ import {
   date,
   index,
   jsonb,
-  pgEnum,
   pgTable,
   text,
   timestamp,
   type AnyPgColumn
 } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 import {
   PhoneNumber,
   PracticeAddress,
   SpecialtyInfo
 } from "@/types/shared-types"
+import { genderEnum, statusEnum } from "./enums"
 
 // Define custom PostgreSQL types
-const geographyPoint = (name: string) => text(name).notNull() // We'll cast this to geography in the DB
-const tsvector = (name: string) => text(name) // We'll cast this to tsvector in the DB
-
-// Enums for standardized fields
-export const genderEnum = pgEnum("gender", ["M", "F", "X"])
-export const statusEnum = pgEnum("status", ["A", "I", "D", "R"]) // Active, Inactive, Deactivated, Retired
+// These will be cast to the correct types in the database via migrations
+const geographyPoint = text // Will be cast to geography(Point, 4326)
+const tsvector = text // Will be cast to tsvector
 
 export const physiciansTable = pgTable(
   "physicians",
@@ -82,7 +80,7 @@ export const physiciansTable = pgTable(
     addressZip5: text("address_zip5"), // Primary practice address 5-digit ZIP
 
     // Geospatial Data
-    location: geographyPoint("location"), // PostGIS geography point for primary practice location
+    location: geographyPoint("location").notNull(), // PostGIS geography point for primary practice location
 
     // Additional Filters
     languages: text("languages").array(), // Array of ISO 639-1 language codes spoken
