@@ -17,9 +17,11 @@
  *   Run `CREATE EXTENSION IF NOT EXISTS pg_trgm;` and `CREATE EXTENSION IF NOT EXISTS postgis;` in your DB.
  * - A database trigger is required to automatically populate the `fullNameTsv` column for full-text search.
  *   This trigger needs to be created manually in the database (see implementation plan Step 10 instructions).
- * - Indexes are defined to optimize common query patterns, including geospatial search (`location_idx`),
- *   fuzzy name search (`last_name_trgm_idx`, `first_name_trgm_idx`), full-text search (`full_name_tsv_idx`),
- *   and filtering by state/zip (`state_zip_idx`).
+ * - Indexes are defined to optimize common query patterns:
+ *   - `location_idx`: GIST index for geospatial queries (PostGIS)
+ *   - `last_name_trgm_idx`, `first_name_trgm_idx`: GIN indexes for trigram-based fuzzy name search
+ *   - `full_name_tsv_idx`: GIN index for full-text search
+ *   - `state_zip_idx`: BTREE index for filtering by state/zip
  */
 import {
   boolean,
@@ -39,18 +41,13 @@ import {
 } from "@/types/shared-types"
 import { genderEnum, statusEnum } from "./enums"
 
-// Define custom PostgreSQL types
-// These will be cast to the correct types in the database via migrations
-const geographyPoint = text // Will be cast to geography(Point, 4326)
-const tsvector = text // Will be cast to tsvector
-
 export const physiciansTable = pgTable(
   "physicians",
   {
     // Core NPPES Fields
     npi: text("npi").primaryKey(), // National Provider Identifier
-    firstName: text("first_name").notNull(),
-    lastName: text("last_name").notNull(),
+    firstName: text("first_name"), // Nullable as per spec v1.1
+    lastName: text("last_name"), // Nullable as per spec v1.1
     middleName: text("middle_name"),
     suffix: text("suffix"), // e.g., Jr., Sr., III
     credential: text("credential"), // e.g., M.D., D.O.
@@ -80,7 +77,9 @@ export const physiciansTable = pgTable(
     addressZip5: text("address_zip5"), // Primary practice address 5-digit ZIP
 
     // Geospatial Data
-    location: geographyPoint("location").notNull(), // PostGIS geography point for primary practice location
+    location: text("location", {
+      ...(sql`geography(Point, 4326)` as any)
+    }), // PostGIS geography point for primary practice location, nullable as per spec v1.1
 
     // Additional Filters
     languages: text("languages").array(), // Array of ISO 639-1 language codes spoken
@@ -105,15 +104,16 @@ export const physiciansTable = pgTable(
       .$onUpdate(() => new Date()),
 
     // Full-Text Search Field
-    fullNameTsv: tsvector("full_name_tsv") // TSVector for full-name search (populated by trigger)
+    fullNameTsv: text("full_name_tsv", {
+      ...(sql`tsvector` as any)
+    }) // TSVector for full-name search (populated by trigger)
   },
   table => ({
-    // Indexes
-    // Note: The actual index types (GIST, GIN) will be created in the migration SQL
-    locationIdx: index("location_idx").on(table.location),
-    lastNameTrgmIdx: index("last_name_trgm_idx").on(table.lastName),
-    firstNameTrgmIdx: index("first_name_trgm_idx").on(table.firstName),
-    fullNameTsvIdx: index("full_name_tsv_idx").on(table.fullNameTsv),
+    // Indexes with explicit type comments
+    locationIdx: index("location_idx").on(table.location), // GIST index for spatial queries
+    lastNameTrgmIdx: index("last_name_trgm_idx").on(table.lastName), // GIN index for trigram search
+    firstNameTrgmIdx: index("first_name_trgm_idx").on(table.firstName), // GIN index for trigram search
+    fullNameTsvIdx: index("full_name_tsv_idx").on(table.fullNameTsv), // GIN index for full-text search
     stateZipIdx: index("state_zip_idx").on(
       table.addressState,
       table.addressZip5
