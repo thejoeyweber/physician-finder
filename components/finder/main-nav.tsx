@@ -18,15 +18,15 @@ export function MainNav() {
 
   const routes = [
     {
-      href: "/finder",
+      href: "/finder/results",
       label: "Home",
-      active: pathname === "/finder"
+      active: pathname === "/finder/results"
     },
     {
-      href: "/finder/results",
+      href: "/finder/results/search",
       label: "Find Providers",
       active:
-        pathname.startsWith("/finder/results") ||
+        pathname.startsWith("/finder/results/search") ||
         pathname.startsWith("/finder/profile")
     }
   ]
@@ -47,8 +47,13 @@ export function MainNav() {
             {route.label}
           </Link>
         ))}
-        {/* Placeholder Favorites Button */}
-        <Button variant="outline" size="sm" className="gap-1">
+        {/* Favorites Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1"
+          onClick={() => alert("Favorites functionality coming soon!")}
+        >
           <Heart className="size-4" /> Favorites
         </Button>
       </nav>
@@ -67,10 +72,13 @@ export function MainNav() {
               <Link href={route.href}>{route.label}</Link>
             </DropdownMenuItem>
           ))}
-          <DropdownMenuItem asChild>
-            <Link href="/finder/favorites" className="flex items-center gap-2">
+          <DropdownMenuItem>
+            <button
+              className="flex w-full items-center gap-2"
+              onClick={() => alert("Favorites functionality coming soon!")}
+            >
               <Heart className="size-4" /> Favorites
-            </Link>
+            </button>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

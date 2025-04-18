@@ -16,7 +16,7 @@ export default function FinderLayout({ children }: FinderLayoutProps) {
       <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 border-b backdrop-blur">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/finder" className="flex items-center gap-2">
+            <Link href="/finder/results" className="flex items-center gap-2">
               <HeartPulse className="text-primary size-6" />
               <span className="text-xl font-bold">Physician Finder</span>
             </Link>

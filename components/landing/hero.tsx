@@ -8,8 +8,7 @@ This client component provides the hero section for the landing page.
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
-import { ChevronRight, Search } from "lucide-react" // Changed icon
+import { Search } from "lucide-react"
 import Link from "next/link"
 import posthog from "posthog-js"
 import AnimatedGradientText from "../magicui/animated-gradient-text"
@@ -70,45 +69,25 @@ export const HeroSection = () => {
         </Link>
       </motion.div> */}
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-        className="mt-8 flex max-w-2xl flex-col items-center justify-center gap-6"
-      >
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-          className="text-balance text-6xl font-bold"
-        >
+      <div className="mt-8 flex max-w-2xl flex-col items-center justify-center gap-6">
+        <div className="text-balance text-6xl font-bold">
           Find the Right Physician, Faster.
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
-          className="max-w-xl text-balance text-xl"
-        >
+        <div className="max-w-xl text-balance text-xl">
           Search the comprehensive NPPES registry to discover qualified doctors
           near you. Filter by specialty, location, and more.
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8, ease: "easeOut" }}
-        >
-          {/* Update link to the actual finder page once created */}
+        <div>
           <Link href="/finder" onClick={handleFindDoctorClick}>
             <Button className="bg-blue-500 text-lg hover:bg-blue-600">
               <Search className="mr-2 size-5" />
               Find a Doctor →
             </Button>
           </Link>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Optional Video Section */}
       {/* <motion.div
