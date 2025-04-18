@@ -105,7 +105,7 @@ export function PhysicianCard({ physician }: PhysicianCardProps): JSX.Element {
             <div className="flex items-start justify-between">
               {/* Name, Specialty, Rating, Location */}
               <div>
-                <Link href={`/finder/profile/${physician.npi}`}>
+                <Link href={`/profile/${physician.npi}`}>
                   <CardTitle className="mb-1 hover:underline">
                     {/* Display name, handling potential nulls */}
                     {`${physician.firstName || ""} ${physician.lastName || ""}`.trim() ||
@@ -212,7 +212,7 @@ export function PhysicianCard({ physician }: PhysicianCardProps): JSX.Element {
             {/* Action Buttons */}
             <div className="mt-3 flex items-center justify-between border-t pt-3">
               <Link
-                href={`/finder/profile/${physician.npi}`}
+                href={`/profile/${physician.npi}`}
                 className="text-primary text-sm font-medium hover:underline"
               >
                 View profile

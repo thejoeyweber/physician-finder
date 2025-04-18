@@ -27,7 +27,7 @@ export function SearchBar({
     if (query.trim()) params.set("query", query.trim())
     if (location.trim()) params.set("location", location.trim())
 
-    router.push(`/finder/results?${params.toString()}`)
+    router.push(`/results?${params.toString()}`)
   }
 
   const useCurrentLocation = () => {

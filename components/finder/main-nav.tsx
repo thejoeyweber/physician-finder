@@ -18,16 +18,14 @@ export function MainNav() {
 
   const routes = [
     {
-      href: "/finder/results",
+      href: "/",
       label: "Home",
-      active: pathname === "/finder/results"
+      active: pathname === "/"
     },
     {
-      href: "/finder/results/search",
+      href: "/finder",
       label: "Find Providers",
-      active:
-        pathname.startsWith("/finder/results/search") ||
-        pathname.startsWith("/finder/profile")
+      active: pathname.startsWith("/finder") || pathname.startsWith("/profile")
     }
   ]
 

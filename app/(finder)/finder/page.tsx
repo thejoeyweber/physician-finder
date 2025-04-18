@@ -72,13 +72,13 @@ export default function FinderHomePage() {
 
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           <Button variant="outline" asChild>
-            <Link href="/finder/results" className="flex items-center gap-2">
+            <Link href="/results" className="flex items-center gap-2">
               Browse All Providers <ArrowRight className="size-4" />
             </Link>
           </Button>
           <Button variant="outline" asChild>
             <Link
-              href="/finder/results?query=Primary%20Care"
+              href="/results?query=Primary%20Care"
               className="flex items-center gap-2"
             >
               Primary Care Doctors
@@ -86,7 +86,7 @@ export default function FinderHomePage() {
           </Button>
           <Button variant="outline" asChild>
             <Link
-              href="/finder/results?query=Dermatology"
+              href="/results?query=Dermatology"
               className="flex items-center gap-2"
             >
               Dermatologists
@@ -112,7 +112,7 @@ export default function FinderHomePage() {
                 Find doctors by their area of expertise.
               </p>
               <Button variant="link" asChild className="text-sm">
-                <Link href="/finder/results">Browse Specialties</Link>
+                <Link href="/results">Browse Specialties</Link>
               </Button>
             </CardContent>
           </Card>
@@ -128,7 +128,7 @@ export default function FinderHomePage() {
                 Search for providers who treat specific conditions.
               </p>
               <Button variant="link" asChild className="text-sm">
-                <Link href="/finder/results">Browse Conditions</Link>
+                <Link href="/results">Browse Conditions</Link>
               </Button>
             </CardContent>
           </Card>
@@ -144,7 +144,7 @@ export default function FinderHomePage() {
                 Locate providers performing specific procedures.
               </p>
               <Button variant="link" asChild className="text-sm">
-                <Link href="/finder/results">Browse Procedures</Link>
+                <Link href="/results">Browse Procedures</Link>
               </Button>
             </CardContent>
           </Card>
@@ -160,7 +160,7 @@ export default function FinderHomePage() {
                 Find doctors near you or in a specific area.
               </p>
               <Button variant="link" asChild className="text-sm">
-                <Link href="/finder/results">Browse Locations</Link>
+                <Link href="/results">Browse Locations</Link>
               </Button>
             </CardContent>
           </Card>
@@ -180,9 +180,7 @@ export default function FinderHomePage() {
               className="justify-start gap-2"
               asChild
             >
-              <Link
-                href={`/finder/results?query=${encodeURIComponent(specialty)}`}
-              >
+              <Link href={`/results?query=${encodeURIComponent(specialty)}`}>
                 <Clipboard className="text-muted-foreground size-4" />
                 <span>{specialty}</span>
               </Link>
@@ -204,9 +202,7 @@ export default function FinderHomePage() {
               className="justify-start gap-2"
               asChild
             >
-              <Link
-                href={`/finder/results?query=${encodeURIComponent(condition)}`}
-              >
+              <Link href={`/results?query=${encodeURIComponent(condition)}`}>
                 <Activity className="text-muted-foreground size-4" />
                 <span>{condition}</span>
               </Link>
@@ -224,7 +220,7 @@ export default function FinderHomePage() {
           {samplePhysicians.map(doctor => (
             <Link
               key={doctor.npi}
-              href={`/finder/profile/${doctor.npi}`}
+              href={`/profile/${doctor.npi}`}
               className="hover:bg-muted/50 block rounded-lg border p-6 transition-colors"
             >
               <h3 className="text-lg font-semibold">{doctor.name}</h3>
@@ -236,7 +232,7 @@ export default function FinderHomePage() {
         </div>
         <div className="mt-8 text-center">
           <Button asChild>
-            <Link href="/finder/results">View More Providers</Link>
+            <Link href="/results">View More Providers</Link>
           </Button>
         </div>
       </div>
