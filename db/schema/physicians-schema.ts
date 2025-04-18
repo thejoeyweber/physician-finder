@@ -31,7 +31,9 @@ import {
   pgTable,
   text,
   timestamp,
-  type AnyPgColumn
+  type AnyPgColumn,
+  customType,
+  integer
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import {
@@ -41,84 +43,74 @@ import {
 } from "@/types/shared-types"
 import { genderEnum, statusEnum } from "./enums"
 
+// Define custom types for PostGIS geography and tsvector
+const geographyType = customType<{ data: string }>({
+  dataType() {
+    return "geography(Point, 4326)"
+  }
+})
+
+const tsvectorType = customType<{ data: string }>({
+  dataType() {
+    return "tsvector"
+  }
+})
+
 export const physiciansTable = pgTable(
   "physicians",
   {
-    // Core NPPES Fields
-    npi: text("npi").primaryKey(), // National Provider Identifier
-    firstName: text("first_name"), // Nullable as per spec v1.1
-    lastName: text("last_name"), // Nullable as per spec v1.1
+    // Primary identifier
+    npi: text("npi").primaryKey(),
+
+    // Basic information
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
     middleName: text("middle_name"),
-    suffix: text("suffix"), // e.g., Jr., Sr., III
-    credential: text("credential"), // e.g., M.D., D.O.
-    gender: genderEnum("gender"),
-    status: statusEnum("status").notNull().default("A"),
+    suffix: text("suffix"),
+    gender: text("gender"),
 
-    // NPPES Enumeration Details
-    enumerationDate: date("enumeration_date").notNull(),
-    lastUpdatedNPPES: date("last_updated_nppes"),
-    deactivationDate: date("deactivation_date"),
-    deactivationReason: text("deactivation_reason"),
-    reactivationDate: date("reactivation_date"),
+    // Contact information
+    primaryPhone: text("primary_phone"),
+    primaryFax: text("primary_fax"),
 
-    // Specialties (Stored as JSONB for flexibility)
-    primarySpecialty: jsonb("primary_specialty").$type<SpecialtyInfo>(),
-    secondarySpecialties: jsonb("secondary_specialties")
-      .$type<SpecialtyInfo[]>()
-      .default([]), // Array of secondary specialties
+    // Primary practice location
+    primaryAddress1: text("primary_address_1"),
+    primaryAddress2: text("primary_address_2"),
+    primaryCity: text("primary_city"),
+    primaryState: text("primary_state"),
+    primaryZip: text("primary_zip"),
+    location: geographyType("location"), // PostGIS geography type
 
-    // Practice Locations and Contact Info (Stored as JSONB)
-    addresses: jsonb("addresses").$type<PracticeAddress[]>().default([]), // Array of practice addresses
-    phoneNumbers: jsonb("phone_numbers").$type<PhoneNumber[]>().default([]), // Array of phone numbers
+    // Specialty information
+    primarySpecialty: text("primary_specialty"),
+    taxonomyDescription: text("taxonomy_description"),
 
-    // Derived/Normalized Address Fields for Indexing/Filtering
-    // These should be populated during the ETL process
-    addressState: text("address_state"), // Primary practice address state (uppercased)
-    addressZip5: text("address_zip5"), // Primary practice address 5-digit ZIP
+    // Search optimization
+    fullNameTsv: tsvectorType("full_name_tsv"), // tsvector type for full-text search
 
-    // Geospatial Data
-    location: text("location", {
-      ...(sql`geography(Point, 4326)` as any)
-    }), // PostGIS geography point for primary practice location, nullable as per spec v1.1
-
-    // Additional Filters
-    languages: text("languages").array(), // Array of ISO 639-1 language codes spoken
-    acceptsTelehealth: boolean("accepts_telehealth").default(false),
-
-    // AI Enrichment Fields
-    aiBio: text("ai_bio"), // AI-generated biography/summary
-    aiBioSource: text("ai_bio_source"), // Source used for AI bio (e.g., model name)
-    aiBioVersion: text("ai_bio_version"), // Identifier for the prompt/model version used ("modelName_promptHash")
-    aiBioEnrichedAt: timestamp("ai_bio_enriched_at", { withTimezone: true }), // Timestamp of AI bio enrichment
-
-    // Geocoding Enrichment Fields
-    geoEnrichedAt: timestamp("geo_enriched_at", { withTimezone: true }), // Timestamp of geocoding enrichment
-
-    // Standard Timestamps (required by backend rules)
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .defaultNow()
-      .notNull()
-      .$onUpdate(() => new Date()),
-
-    // Full-Text Search Field
-    fullNameTsv: text("full_name_tsv", {
-      ...(sql`tsvector` as any)
-    }) // TSVector for full-name search (populated by trigger)
+    // Application-specific fields
+    isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+    viewCount: integer("view_count").default(0)
   },
   table => ({
-    // Indexes with explicit type comments
-    locationIdx: index("location_idx").on(table.location), // GIST index for spatial queries
-    lastNameTrgmIdx: index("last_name_trgm_idx").on(table.lastName), // GIN index for trigram search
-    firstNameTrgmIdx: index("first_name_trgm_idx").on(table.firstName), // GIN index for trigram search
-    fullNameTsvIdx: index("full_name_tsv_idx").on(table.fullNameTsv), // GIN index for full-text search
-    stateZipIdx: index("state_zip_idx").on(
-      table.addressState,
-      table.addressZip5
-    ),
-    npiIdx: index("npi_idx").on(table.npi)
+    // PostGIS GIST index for spatial queries
+    locationIdx: sql`CREATE INDEX IF NOT EXISTS physicians_location_idx ON physicians USING GIST (${table.location})`,
+
+    // GIN index for full-text search
+    fullNameIdx: sql`CREATE INDEX IF NOT EXISTS physicians_full_name_idx ON physicians USING GIN (${table.fullNameTsv})`,
+
+    // B-tree index for specialty lookups
+    specialtyIdx: sql`CREATE INDEX IF NOT EXISTS physicians_specialty_idx ON physicians (${table.primarySpecialty})`,
+
+    // B-tree index for state filtering
+    stateIdx: sql`CREATE INDEX IF NOT EXISTS physicians_state_idx ON physicians (${table.primaryState})`,
+
+    // Trigram indexes for fuzzy name search
+    lastNameTrgmIdx: sql`CREATE INDEX IF NOT EXISTS physicians_last_name_trgm_idx ON physicians USING GIN (${table.lastName} gin_trgm_ops)`,
+
+    firstNameTrgmIdx: sql`CREATE INDEX IF NOT EXISTS physicians_first_name_trgm_idx ON physicians USING GIN (${table.firstName} gin_trgm_ops)`
   })
 )
 
