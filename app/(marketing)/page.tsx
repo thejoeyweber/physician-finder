@@ -15,6 +15,12 @@ export default async function HomePage() {
       <HeroSection />
       {/* social proof */}
       <FeaturesSection />
+      {/* Add a link to the finder */}
+      <div className="mt-12 text-center">
+        <a href="/finder" className="text-primary hover:underline">
+          Go to Provider Search →
+        </a>
+      </div>
       {/* pricing */}
       {/* faq */}
       {/* blog */}
