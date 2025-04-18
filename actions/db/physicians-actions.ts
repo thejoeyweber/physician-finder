@@ -48,11 +48,13 @@ interface SearchResults {
 }
 
 const DEFAULT_PAGE_LIMIT = 10
-const MIN_SIMILARITY_THRESHOLD = 0.1 // Adjust as needed for fuzzy search sensitivity
+const MIN_SIMILARITY_THRESHOLD = 0.1 // For fuzzy matching fallback
+const MIN_RANK_THRESHOLD = 0.01 // Minimum ts_rank threshold for full-text search
 
 /**
  * @description Searches for physicians based on text query, filters, sorting, and pagination.
- * Uses fuzzy matching for names and basic filtering for location (state/zip).
+ * Uses full-text search (tsvector) for names with fuzzy matching fallback,
+ * and basic filtering for location (state/zip).
  * @param {SearchParams} params - The search parameters including query, filters, pagination, and sorting.
  * @returns {Promise<ActionState<SearchResults>>} Action result with the list of matching physicians and pagination info, or error info.
  */
@@ -73,22 +75,35 @@ export async function searchPhysiciansAction(
     // --- Build WHERE conditions ---
     const conditions = []
 
-    // Text Query (Fuzzy Name Search + Basic Location/Specialty)
+    // Text Query (Full-text Search + Fuzzy Name Search + Basic Location/Specialty)
     if (query && query.trim()) {
       const cleanedQuery = query.trim()
-      // Use pg_trgm for fuzzy matching on first and last names
-      // Use ILIKE for basic matching on specialty description and location (state/zip)
+
+      // Convert search query to tsquery format
+      const tsQuery = cleanedQuery
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(term => `${term}:*`) // Add prefix matching
+        .join(" & ")
+
       conditions.push(
         or(
-          // Fuzzy name match using similarity (requires pg_trgm extension)
-          sql`similarity(physicians.first_name, ${cleanedQuery}) > ${MIN_SIMILARITY_THRESHOLD}`,
-          sql`similarity(physicians.last_name, ${cleanedQuery}) > ${MIN_SIMILARITY_THRESHOLD}`,
-          // Basic ILIKE matching for specialty (within JSONB) - might need refinement
-          sql`physicians.primary_specialty ->> 'taxonomyDescription' ilike ${`%${cleanedQuery}%`}`,
-          // Basic ILIKE matching for state/zip
-          ilike(physiciansTable.addressState, `%${cleanedQuery}%`),
-          ilike(physiciansTable.addressZip5, `%${cleanedQuery}%`)
-          // TODO: Add full_name_tsv matching later
+          // Full-text search on names using ts_rank for relevance
+          sql`${physiciansTable.fullNameTsv} @@ to_tsquery('english', ${tsQuery})`,
+
+          // Fuzzy name match using similarity as a fallback
+          sql`(
+            similarity(physicians.first_name, ${cleanedQuery}) > ${MIN_SIMILARITY_THRESHOLD} OR
+            similarity(physicians.last_name, ${cleanedQuery}) > ${MIN_SIMILARITY_THRESHOLD}
+          )`,
+
+          // Basic matching for specialty
+          sql`physicians.primary_specialty ilike ${`%${cleanedQuery}%`}`,
+          sql`physicians.taxonomy_description ilike ${`%${cleanedQuery}%`}`,
+
+          // Basic matching for location
+          ilike(physiciansTable.primaryState, `%${cleanedQuery}%`),
+          ilike(physiciansTable.primaryZip, `%${cleanedQuery}%`)
         )
       )
     }
@@ -97,16 +112,15 @@ export async function searchPhysiciansAction(
     if (filters?.state) {
       // Ensure state filter uses uppercase as stored in DB
       conditions.push(
-        eq(physiciansTable.addressState, filters.state.toUpperCase())
+        eq(physiciansTable.primaryState, filters.state.toUpperCase())
       )
     }
     if (filters?.zip) {
       // Match 5-digit zip prefix
       conditions.push(
-        sql`${physiciansTable.addressZip5} like ${`${filters.zip}%`}`
+        sql`${physiciansTable.primaryZip} like ${`${filters.zip}%`}`
       )
     }
-    // TODO: Add filters for language, telehealth, etc.
 
     // Combine conditions with AND
     const whereCondition =
@@ -114,6 +128,28 @@ export async function searchPhysiciansAction(
 
     // --- Build ORDER BY clause ---
     let orderByClause = []
+
+    // If there's a search query, prioritize results by relevance
+    if (query?.trim()) {
+      const tsQuery = query
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(term => `${term}:*`)
+        .join(" & ")
+
+      orderByClause.push(
+        // Rank results by full-text match score
+        sql`ts_rank(${physiciansTable.fullNameTsv}, to_tsquery('english', ${tsQuery})) DESC`,
+        // Then by similarity score for fuzzy matching
+        sql`GREATEST(
+          similarity(physicians.first_name, ${query}),
+          similarity(physicians.last_name, ${query})
+        ) DESC`
+      )
+    }
+
+    // Add user-specified sorting as secondary criteria
     switch (sortBy) {
       case "name":
         orderByClause.push(
@@ -125,19 +161,18 @@ export async function searchPhysiciansAction(
           sortOrder === "asc"
             ? asc(physiciansTable.firstName)
             : desc(physiciansTable.firstName)
-        ) // Secondary sort by first name
-        break
-      case "specialty":
-        // Sorting by JSONB field requires specific SQL or casting
-        orderByClause.push(
-          sql`physicians.primary_specialty ->> 'taxonomyDescription' ${sortOrder === "asc" ? sql`ASC` : sql`DESC`}`
         )
         break
-      // case "distance": // Add distance sorting later with PostGIS
-      //   break;
+      case "specialty":
+        orderByClause.push(
+          sql`physicians.primary_specialty ${sortOrder === "asc" ? sql`ASC` : sql`DESC`}`
+        )
+        break
       default:
-        // Default sort or handle no sort preference
-        orderByClause.push(asc(physiciansTable.lastName)) // Default sort by last name A-Z
+        if (!query?.trim()) {
+          // Only use default sort if no search query (otherwise use relevance)
+          orderByClause.push(asc(physiciansTable.lastName))
+        }
     }
 
     // --- Execute Queries ---

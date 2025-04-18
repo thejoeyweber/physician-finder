@@ -1,14 +1,12 @@
 /*
 <ai_context>
-This server layout provides a shared header and basic structure for (marketing) routes.
+This layout provides a shared header and basic structure for (marketing) routes.
 </ai_context>
 */
 
-"use server"
-
 import Header from "@/components/header"
 
-export default async function MarketingLayout({
+export default function MarketingLayout({
   children
 }: {
   children: React.ReactNode

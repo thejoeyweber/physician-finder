@@ -11,13 +11,7 @@ import {
   MapPin,
   Clipboard
 } from "lucide-react"
-
-// Placeholder for SearchBar component - will be implemented in Step 14
-const SearchBar = () => (
-  <div className="bg-muted text-muted-foreground flex h-12 items-center justify-center rounded-md border p-4">
-    Search Bar Placeholder (Step 14)
-  </div>
-)
+import { SearchBar } from "@/components/finder/search-bar"
 
 // Mock data for demonstration
 const popularSpecialties = [

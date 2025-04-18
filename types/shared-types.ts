@@ -20,6 +20,7 @@ export interface PhoneNumber {
   number: string // E.164 format
   type: "PRACTICE" | "FAX" | "DIRECT" | "MOBILE"
   isPrimary: boolean
+  locationId?: string // Optional reference to a specific practice location
 }
 
 // Specialty information structure
@@ -30,6 +31,79 @@ export interface SpecialtyInfo {
   licenseState?: string
   primarySpecialty: boolean
   boardCertified?: boolean
+}
+
+// Mock data interfaces for consistent usage across components
+export interface MockMetrics {
+  yearsExperience: number
+  rating: number
+  reviewCount: number
+  acceptingNewPatients: boolean
+  offersOnlineScheduling: boolean
+  nextAvailable: string
+}
+
+export interface MockRatingsSummary {
+  overall: number
+  trustworthiness: number
+  explainsConditions: number
+  answersQuestions: number
+  providesFollowUp: number
+  staffFriendliness: number
+}
+
+export interface MockPatientReview {
+  name: string
+  date: string
+  rating: number
+  comment: string
+}
+
+export interface MockHospitalAffiliation {
+  name: string
+  address: string
+}
+
+export interface MockOfficeHours {
+  weekdays: string
+  saturday: string
+  sunday: string
+}
+
+export interface MockEducation {
+  type: string
+  institution: string
+  year?: string
+}
+
+export interface MockCertification {
+  name: string
+  status: string
+  year?: string
+}
+
+export interface MockAward {
+  name: string
+  years: string
+}
+
+export interface MockPatientDemographics {
+  treats: string
+  genders: string
+}
+
+export interface MockEnrichment {
+  education: MockEducation[]
+  certifications: MockCertification[]
+  awards: MockAward[]
+  publications: string[]
+  researchInterests: string[]
+  hospitalAffiliations: MockHospitalAffiliation[]
+  officeHours: MockOfficeHours
+  insuranceAccepted: string[]
+  patientDemographics: MockPatientDemographics
+  conditionsTreated: string[]
+  proceduresPerformed: string[]
 }
 
 // Finder instance configuration structure

@@ -1,116 +1,147 @@
 "use client"
 
 import * as React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { Calendar, Heart, MessageSquare, Share, ThumbsUp } from "lucide-react"
-
+import { Share, Heart, Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
-import { toast } from "@/components/ui/use-toast"
+import { toast } from "sonner"
 import type { SelectPhysician } from "@/db/schema"
+import {
+  getMockMetrics,
+  getMockRatings,
+  getMockReviews,
+  getMockEnrichment,
+  isMockData,
+  isMockMetric,
+  getMockDataLabel
+} from "@/lib/mock-data-utils"
+import { MockDataIndicator } from "@/components/ui/mock-data-indicator"
+import { GraduationCap, Star, Check } from "lucide-react"
 
 interface ProfileClientContentProps {
   physician: SelectPhysician
+  error?: string
 }
 
-export function ProfileClientContent({ physician }: ProfileClientContentProps) {
-  const [isSaved, setIsSaved] = useState(false)
-
-  const handleSave = () => {
-    setIsSaved(!isSaved)
-    toast({
-      title: isSaved
-        ? "Removed from saved physicians"
-        : "Saved to your profile",
-      description: isSaved
-        ? "This physician has been removed from your saved list"
-        : "You can view your saved physicians in your profile"
-    })
+export function ProfileClientContent({
+  physician,
+  error
+}: ProfileClientContentProps) {
+  if (error) {
+    return (
+      <div className="bg-muted/30 rounded-lg border p-4">
+        <p className="text-muted-foreground text-sm">{error}</p>
+        <Button
+          variant="outline"
+          className="mt-2"
+          onClick={() => window.location.reload()}
+        >
+          Try Again
+        </Button>
+      </div>
+    )
   }
 
-  const handleShare = async (method: "copy" | "email") => {
-    const profileUrl = window.location.href
-
-    if (method === "copy") {
-      await navigator.clipboard.writeText(profileUrl)
-      toast({
-        title: "Link copied",
-        description: "The profile link has been copied to your clipboard"
-      })
-    } else if (method === "email") {
-      const subject = `Check out Dr. ${physician.lastName}'s profile`
-      const body = `I thought you might be interested in this physician's profile:\n\n${profileUrl}`
-      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Dr. ${physician.lastName}'s Profile`,
+          url: window.location.href
+        })
+      } else {
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success("Profile link copied to clipboard")
+      }
+    } catch (error) {
+      console.error("Error sharing:", error)
+      toast.error("Failed to share profile")
     }
   }
 
+  const handlePrint = () => {
+    try {
+      window.print()
+    } catch (error) {
+      console.error("Error printing:", error)
+      toast.error("Failed to print profile")
+    }
+  }
+
+  const handleFavorite = () => {
+    // TODO: Implement favorite functionality
+    toast.info("Favorite feature coming soon")
+  }
+
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        variant={isSaved ? "default" : "outline"}
-        size="sm"
-        className="gap-1"
-        onClick={handleSave}
-      >
-        <Heart className="size-4" fill={isSaved ? "currentColor" : "none"} />
-        <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="icon" onClick={handleShare}>
+        <Share className="size-4" />
+        <span className="sr-only">Share Profile</span>
       </Button>
-
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="default" size="sm" className="gap-1">
-            <Calendar className="size-4" />
-            <span className="hidden sm:inline">Schedule</span>
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Schedule an Appointment</DialogTitle>
-            <DialogDescription>
-              This feature is coming soon. Please call the office directly to
-              schedule an appointment.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`tel:${physician.phoneNumbers?.[0]?.number}`}>
-                Call Office
-              </Link>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-1">
-            <Share className="size-4" />
-            <span className="hidden sm:inline">Share</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => handleShare("copy")}>
-            Copy Link
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleShare("email")}>
-            Share via Email
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button variant="outline" size="icon" onClick={handleFavorite}>
+        <Heart className="size-4" />
+        <span className="sr-only">Add to Favorites</span>
+      </Button>
+      <Button variant="outline" size="icon" onClick={handlePrint}>
+        <Printer className="size-4" />
+        <span className="sr-only">Print Profile</span>
+      </Button>
     </div>
   )
+}
+
+interface ProfileDataProps {
+  physician: SelectPhysician
+}
+
+export function ProfileData({ physician }: ProfileDataProps) {
+  // Get mock data using utilities
+  const mockMetrics = getMockMetrics(physician)
+  const mockRatingsSummary = getMockRatings(physician)
+  const mockPatientReviews = getMockReviews(physician)
+  const mockEnrichment = getMockEnrichment(physician)
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+      <div className="flex items-center gap-2">
+        <GraduationCap className="text-muted-foreground size-4" />
+        <span className="text-muted-foreground">
+          {mockMetrics.yearsExperience} years experience
+          {isMockMetric("yearsExperience") && (
+            <MockDataIndicator field="yearsExperience" />
+          )}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Star className="text-muted-foreground size-4" />
+        <span className="text-muted-foreground">
+          {mockMetrics.rating} ({mockMetrics.reviewCount} reviews)
+          {isMockMetric("rating") && <MockDataIndicator field="rating" />}
+        </span>
+      </div>
+      {mockMetrics.acceptingNewPatients && (
+        <div className="flex items-center gap-2">
+          <Check className="size-4 text-green-500" />
+          <span className="text-muted-foreground">
+            Accepting new patients
+            {isMockMetric("acceptingNewPatients") && (
+              <MockDataIndicator field="acceptingNewPatients" />
+            )}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Export mock data for use in other components
+export function useMockData(physician: SelectPhysician) {
+  return {
+    metrics: getMockMetrics(physician),
+    ratings: getMockRatings(physician),
+    reviews: getMockReviews(physician),
+    enrichment: getMockEnrichment(physician),
+    isMockData,
+    isMockMetric
+  }
 }

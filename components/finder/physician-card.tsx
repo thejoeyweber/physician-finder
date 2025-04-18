@@ -19,14 +19,13 @@
  * - @/components/ui/badge: Badge component for displaying specialty and features.
  * - @/components/ui/button: Button component for actions.
  * - @/db/schema: Provides the `SelectPhysician` type definition.
- * - @/lib/utils: Utility functions (currently unused here).
+ * - @/lib/mock-data: Provides centralized mock data.
  *
  * @notes
  * - This component uses `"use client"` because it includes interactive elements (buttons with onClick).
  * - Mock data is used for: image, years experience, rating, review count, phone number, availability badges.
  * - Functionality for "Schedule" and "Save to favorites" buttons is deferred.
- * - Assumes the `physician.addresses` array contains at least one address for displaying location.
- * - Phone number display is hidden on small screens (`sm:flex`).
+ * - Assumes the physician has a primary address and phone number for displaying location.
  */
 "use client"
 
@@ -37,8 +36,24 @@ import Image from "next/image"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star, MapPin, Phone, Calendar, Clock, Check } from "lucide-react"
+import {
+  Star,
+  MapPin,
+  Phone,
+  Calendar,
+  Clock,
+  Check,
+  Briefcase
+} from "lucide-react"
 import type { SelectPhysician } from "@/db/schema"
+import {
+  mockYearsExperience,
+  mockRating,
+  mockReviewCount,
+  mockAcceptingNewPatients,
+  mockOffersTelehealth
+} from "@/lib/mock-data"
+import { MockDataIndicator } from "@/components/ui/mock-data-indicator"
 
 interface PhysicianCardProps {
   /** The physician data object conforming to the SelectPhysician type. */
@@ -46,25 +61,6 @@ interface PhysicianCardProps {
 }
 
 export function PhysicianCard({ physician }: PhysicianCardProps): JSX.Element {
-  // --- Mock Data (Placeholders for Phase 1) ---
-  const yearsExperience = 15 // Mocked: Replace with actual data later
-  const rating = 4.2 // Mocked: Replace with actual data later
-  const reviewCount = 42 // Mocked: Replace with actual data later
-  const acceptingNewPatients = true // Mocked: Replace with actual data later
-  const offersOnlineScheduling = true // Mocked: Replace with actual data later
-  const nextAvailable = "Today" // Mocked: Replace with actual data later
-
-  // Safely access the first address and phone number
-  const primaryAddress =
-    physician.addresses && physician.addresses.length > 0
-      ? physician.addresses[0]
-      : null
-  const primaryPhoneNumber =
-    physician.phoneNumbers && physician.phoneNumbers.length > 0
-      ? physician.phoneNumbers.find(p => p.isPrimary) ||
-        physician.phoneNumbers[0]
-      : null
-
   // --- Event Handlers ---
   const handleSaveFavorite = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>
@@ -110,29 +106,33 @@ export function PhysicianCard({ physician }: PhysicianCardProps): JSX.Element {
                     {/* Display name, handling potential nulls */}
                     {`${physician.firstName || ""} ${physician.lastName || ""}`.trim() ||
                       "Unnamed Provider"}{" "}
-                    {physician.credential}
+                    {physician.suffix}
                   </CardTitle>
                 </Link>
                 <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                   {/* Primary Specialty */}
-                  {physician.primarySpecialty?.taxonomyDescription && (
+                  {physician.taxonomyDescription && (
                     <Badge variant="secondary">
-                      {physician.primarySpecialty.taxonomyDescription}
+                      {physician.taxonomyDescription}
                     </Badge>
                   )}
-                  {/* Mocked Years Experience */}
-                  <span className="text-muted-foreground text-sm">
-                    {yearsExperience} years experience (mock)
-                  </span>
+                  {/* Years Experience */}
+                  <div className="flex items-center gap-1">
+                    <Briefcase className="text-muted-foreground size-4" />
+                    <span className="text-muted-foreground flex items-center gap-1 text-sm">
+                      {mockYearsExperience} years experience
+                      <MockDataIndicator field="yearsExperience" />
+                    </span>
+                  </div>
                 </div>
-                {/* Mocked Rating */}
+                {/* Rating */}
                 <div className="mb-2 flex items-center gap-1">
                   <div className="flex">
                     {[1, 2, 3, 4, 5].map(star => (
                       <Star
                         key={star}
                         className={`size-4 ${
-                          star <= Math.round(rating)
+                          star <= Math.round(mockRating)
                             ? "fill-primary text-primary" // Use primary color for filled stars
                             : "text-muted" // Use muted color for empty stars
                         }`}
@@ -142,30 +142,30 @@ export function PhysicianCard({ physician }: PhysicianCardProps): JSX.Element {
                   </div>
                   <span
                     className="ml-1 text-sm"
-                    aria-label={`Rating: ${rating} out of 5 stars`}
+                    aria-label={`Rating: ${mockRating} out of 5 stars`}
                   >
-                    {rating.toFixed(1)}
+                    {mockRating.toFixed(1)}
                   </span>
                   <span className="text-muted-foreground text-sm">
-                    ({reviewCount} reviews)
+                    ({mockReviewCount} reviews)
                   </span>
                 </div>
                 {/* Location and Phone */}
                 <div className="text-muted-foreground flex flex-col gap-x-2 gap-y-1 text-sm sm:flex-row sm:items-center">
                   {/* Location */}
-                  {primaryAddress && (
+                  {physician.primaryCity && physician.primaryState && (
                     <div className="flex items-center gap-1">
                       <MapPin className="size-4 shrink-0" aria-hidden="true" />
                       <span>
-                        {primaryAddress.city}, {primaryAddress.state}
+                        {physician.primaryCity}, {physician.primaryState}
                       </span>
                     </div>
                   )}
-                  {/* Phone (Mocked, hidden on small screens) */}
-                  {primaryPhoneNumber && (
+                  {/* Phone (hidden on small screens) */}
+                  {physician.primaryPhone && (
                     <div className="hidden items-center gap-1 sm:flex">
                       <Phone className="size-4 shrink-0" aria-hidden="true" />
-                      <span>{primaryPhoneNumber.number}</span>
+                      <span>{physician.primaryPhone}</span>
                     </div>
                   )}
                 </div>
@@ -183,9 +183,9 @@ export function PhysicianCard({ physician }: PhysicianCardProps): JSX.Element {
               </Button>
             </div>
 
-            {/* Availability Badges (Mocked) */}
+            {/* Availability Badges */}
             <div className="mt-3 flex flex-wrap gap-2">
-              {acceptingNewPatients && (
+              {mockAcceptingNewPatients && (
                 <Badge
                   variant="outline"
                   className="flex items-center gap-1 border-green-300 bg-green-50 text-xs text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300"
@@ -193,38 +193,40 @@ export function PhysicianCard({ physician }: PhysicianCardProps): JSX.Element {
                   <Check className="size-3" /> Accepting new patients
                 </Badge>
               )}
-              {offersOnlineScheduling && (
+              {mockOffersTelehealth && (
                 <Badge
                   variant="outline"
                   className="flex items-center gap-1 border-blue-300 bg-blue-50 text-xs text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
                 >
-                  <Calendar className="size-3" /> Online scheduling
+                  <Calendar className="size-3" /> Online scheduling available
                 </Badge>
               )}
               <Badge
                 variant="outline"
-                className="flex items-center gap-1 border-gray-300 bg-gray-50 text-xs text-gray-800 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300"
+                className="flex items-center gap-1 text-xs"
               >
-                <Clock className="size-3" /> Next available: {nextAvailable}
+                <Clock className="size-3" /> Next available: Today
               </Badge>
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-3 flex items-center justify-between border-t pt-3">
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="default"
+                className="flex-1 sm:flex-none"
+                onClick={handleSchedule}
+              >
+                <Calendar className="mr-2 size-4" />
+                Schedule
+              </Button>
               <Link
                 href={`/profile/${physician.npi}`}
-                className="text-primary text-sm font-medium hover:underline"
+                className="flex-1 sm:flex-none"
               >
-                View profile
+                <Button variant="outline" className="w-full">
+                  View profile
+                </Button>
               </Link>
-              <Button
-                size="sm"
-                className="h-8"
-                onClick={handleSchedule}
-                aria-label={`Schedule an appointment with ${physician.firstName} ${physician.lastName}`}
-              >
-                <Calendar className="mr-1 size-4" /> Schedule
-              </Button>
             </div>
           </div>
         </div>

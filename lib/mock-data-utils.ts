@@ -5,77 +5,33 @@
  * and clearly distinguish between real NPPES data and mock/placeholder data.
  */
 
+"use client"
+
 import type { SelectPhysician } from "@/db/schema"
-
-// Types for mock data structures
-export interface MockPhysicianMetrics {
-  yearsExperience: number
-  rating: number
-  reviewCount: number
-  acceptingNewPatients: boolean
-  offersOnlineScheduling: boolean
-  nextAvailable: string
-}
-
-export interface MockPhysicianReview {
-  name: string
-  date: string
-  rating: number
-  comment: string
-}
-
-export interface MockPhysicianRatings {
-  overall: number
-  trustworthiness: number
-  explainsConditions: number
-  answersQuestions: number
-  providesFollowUp: number
-  staffFriendliness: number
-}
-
-export interface MockPhysicianEducation {
-  type: string
-  institution: string
-  year?: string
-}
-
-export interface MockPhysicianAward {
-  name: string
-  years: string
-}
-
-export interface MockPhysicianAffiliation {
-  name: string
-  address: string
-}
-
-export interface MockPhysicianOfficeHours {
-  weekdays: string
-  saturday: string
-  sunday: string
-}
-
-export interface MockPhysicianEnrichment {
-  education: MockPhysicianEducation[]
-  certifications: Array<{ name: string; status: string }>
-  awards: MockPhysicianAward[]
-  publications: string[]
-  researchInterests: string[]
-  hospitalAffiliations: MockPhysicianAffiliation[]
-  officeHours: MockPhysicianOfficeHours
-  insuranceAccepted: string[]
-  patientDemographics: {
-    treats: string
-    genders: string
-  }
-  conditionsTreated: string[]
-  proceduresPerformed: string[]
-}
+import type {
+  MockMetrics,
+  MockPatientReview,
+  MockRatingsSummary,
+  MockEnrichment,
+  MockEducation,
+  MockCertification,
+  MockAward,
+  MockHospitalAffiliation,
+  MockOfficeHours,
+  MockPatientDemographics
+} from "@/types/shared-types"
+import { InfoIcon } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
+import type { ReactElement } from "react"
+import { MockDataIndicator } from "@/components/ui/mock-data-indicator"
 
 // Helper function to generate consistent mock metrics
-export function getMockMetrics(
-  physician: SelectPhysician
-): MockPhysicianMetrics {
+export function getMockMetrics(physician: SelectPhysician): MockMetrics {
   // Use a deterministic "random" value based on NPI to ensure consistency
   const npiSeed = parseInt(physician.npi.slice(-4), 10)
   const baseYears = 5 + (npiSeed % 25) // 5-30 years experience
@@ -94,7 +50,7 @@ export function getMockMetrics(
 // Helper function to generate mock reviews
 export function getMockReviews(
   physician: SelectPhysician
-): MockPhysicianReview[] {
+): MockPatientReview[] {
   const npiSeed = parseInt(physician.npi.slice(-4), 10)
   const metrics = getMockMetrics(physician)
 
@@ -122,9 +78,7 @@ export function getMockReviews(
 }
 
 // Helper function to generate mock ratings summary
-export function getMockRatings(
-  physician: SelectPhysician
-): MockPhysicianRatings {
+export function getMockRatings(physician: SelectPhysician): MockRatingsSummary {
   const metrics = getMockMetrics(physician)
   const baseRating = metrics.rating
 
@@ -139,14 +93,12 @@ export function getMockRatings(
 }
 
 // Helper function to generate specialty-specific mock data
-export function getMockEnrichment(
-  physician: SelectPhysician
-): MockPhysicianEnrichment {
+export function getMockEnrichment(physician: SelectPhysician): MockEnrichment {
   const specialtyName =
     physician.primarySpecialty?.taxonomyDescription?.toLowerCase() || ""
 
   // Default mock data
-  const defaultData: MockPhysicianEnrichment = {
+  const defaultData: MockEnrichment = {
     education: [
       {
         type: "Medical School",
@@ -165,8 +117,12 @@ export function getMockEnrichment(
       }
     ],
     certifications: [
-      { name: "American Board of Example Medicine", status: "Certified" },
-      { name: "State Medical License", status: "Active" }
+      {
+        name: "American Board of Example Medicine",
+        status: "Certified",
+        year: "2015"
+      },
+      { name: "State Medical License", status: "Active", year: "2015" }
     ],
     awards: [
       { name: "Top Doctor Award", years: "2023, 2024" },
@@ -249,14 +205,14 @@ export function getMockEnrichment(
       "Developmental Disorders",
       "Asthma",
       "Allergies",
-      "Growth Issues"
+      "Growth and Development",
+      "Behavioral Issues"
     ]
     defaultData.proceduresPerformed = [
       "Well-Child Visits",
       "Immunizations",
       "Growth Assessments",
-      "Developmental Screenings",
-      "Vision and Hearing Tests"
+      "Developmental Screenings"
     ]
     defaultData.patientDemographics.treats = "Children (0-18 years)"
   }
@@ -265,16 +221,16 @@ export function getMockEnrichment(
 }
 
 // Helper function to check if a field is using mock data
-export function isMockData(field: keyof MockPhysicianEnrichment): boolean {
-  return true // All fields in MockPhysicianEnrichment are mock data
+export function isMockData(field: keyof MockEnrichment): boolean {
+  return true // All fields in MockEnrichment are mock data
 }
 
 // Helper function to check if a metric is using mock data
-export function isMockMetric(field: keyof MockPhysicianMetrics): boolean {
-  return true // All fields in MockPhysicianMetrics are mock data
+export function isMockMetric(field: keyof MockMetrics): boolean {
+  return true // All fields in MockMetrics are mock data
 }
 
 // Helper function to get a human-readable label for mock data
 export function getMockDataLabel(field: string): string {
-  return `Mock data - This information will be available in a future update`
+  return `Mock ${field}`
 }
